@@ -1,0 +1,30 @@
+{
+  "name": "@1billion/node",
+  "version": "0.1.0",
+  "description": "Send transactional e-mail with 1billion from Node.js, Next.js (server) and Bun",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": ["dist", "README.md", "LICENSE"],
+  "engines": { "node": ">=18" },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "lint": "eslint .",
+    "test": "node --test test/*.test.ts"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.0",
+    "@types/node": "^24.0.0",
+    "eslint": "^9.39.0",
+    "eslint-plugin-react": "^7.37.5",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.46.0"
+  }
+}
