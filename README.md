@@ -1,7 +1,7 @@
 # @1billion/node
 
 The client of [1billion](https://1billion.clowk.in) for Node.js, Next.js (on the server) and Bun:
-transactional e-mail with our own MTA. There is no browser build: an API key must never reach a browser.
+transactional e-mail on its own sending infrastructure. There is no browser build: an API key must never reach a browser.
 
 ```bash
 pnpm add @1billion/node

@@ -1,5 +1,5 @@
 /**
- * The client of 1billion: transactional e-mail with our own MTA. Use it only on a server
+ * The client of 1billion: transactional e-mail on its own sending infrastructure. Use it only on a server
  * (Node.js, a Next.js route, Bun): an API key must never reach a browser.
  *
  * A 503 or a network error is tried again (3 times in all) with the same Idempotency-Key, so a
