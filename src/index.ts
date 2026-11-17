@@ -63,9 +63,9 @@ export interface Options {
 /** An answer that is not a success. `status` is 0 for a network error. */
 export class OneBillionError extends Error {
   readonly status: number
-  readonly body: Record<string, string>
+  readonly body: Record<string, string | number>
 
-  constructor(message: string, status = 0, body: Record<string, string> = {}) {
+  constructor(message: string, status = 0, body: Record<string, string | number> = {}) {
     super(message)
 
     this.name = "OneBillionError"
@@ -73,9 +73,12 @@ export class OneBillionError extends Error {
     this.body = body
   }
 
-  /** 402: no credits for these recipients; `body.buy_url` is the page to buy more. */
+  /**
+   * 429: no credits for these recipients today. `body.retry_after` is the seconds until the
+   * credits of the next day (00:00 UTC); `body.buy_url` is the page to buy a pack.
+   */
   get noCredits(): boolean {
-    return this.status === 402
+    return this.status === 429
   }
 
   /** 422: a bad message, or a recipient that failed a check (`body.check`, `body.address`). */

@@ -68,8 +68,8 @@ test("gives up after 3 tries, and never retries other errors", async () => {
   assert.equal(refused.calls.length, 1)
 })
 
-test("a 402 says there are no credits", async () => {
-  const { fetcher } = fakeFetch(json(402, { error: "not enough credits", buy_url: "https://1billion.clowk.in/usage" }))
+test("a 429 says there are no credits for today", async () => {
+  const { fetcher } = fakeFetch(json(429, { error: "not enough credits", retry_after: 3600, buy_url: "https://1billion.clowk.in/usage" }))
   const send = new OneBillion("key", { fetch: fetcher }).send({ from: "a@app.com", to: "b@x.com", subject: "s", text: "t" })
 
   await assert.rejects(send, (error: OneBillionError) => error.noCredits && error.body.buy_url !== undefined)

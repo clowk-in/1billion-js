@@ -23,7 +23,7 @@ try {
   })
 } catch (error) {
   if (error instanceof OneBillionError && error.noCredits) {
-    // 402: buy credits in the console (error.body.buy_url)
+    // 429: no credits today (error.body.retry_after, error.body.buy_url)
   }
 }
 
@@ -34,7 +34,7 @@ await mail.validate("jane@exemplo.com") // { valid, checks }
 
 - A `503` or a network error is tried again, 3 times in all, with the same `Idempotency-Key` (made for you when
   you do not pass one). No other error is tried again.
-- `OneBillionError` has `status`, `body`, `noCredits` (402) and `refused` (422, `body.check`, `body.address`).
+- `OneBillionError` has `status`, `body`, `noCredits` (429) and `refused` (422, `body.check`, `body.address`).
 - Options: `url`, `backoffMs`, `timeoutMs`, `fetch`.
 
 The API is in [openapi.yml](https://1billion.clowk.in/openapi.yml).
