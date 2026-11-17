@@ -1,14 +1,14 @@
-# @1billion/node
+# @clowk/1billion
 
 The client of [1billion](https://1billion.clowk.in) for Node.js, Next.js (on the server) and Bun:
 transactional e-mail on its own sending infrastructure. There is no browser build: an API key must never reach a browser.
 
 ```bash
-pnpm add @1billion/node
+pnpm add @clowk/1billion
 ```
 
 ```ts
-import { OneBillion, OneBillionError } from "@1billion/node"
+import { OneBillion, OneBillionError } from "@clowk/1billion"
 
 const mail = new OneBillion(process.env.ONEBILLION_KEY)
 
