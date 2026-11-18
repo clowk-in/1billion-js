@@ -1,6 +1,6 @@
 {
   "name": "@clowk/1billion",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "description": "Send transactional e-mail with 1billion from Node.js, Next.js (server) and Bun",
   "license": "MIT",
   "repository": {
