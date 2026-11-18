@@ -45,3 +45,15 @@ The API is in [openapi.yml](https://1billion.clowk.in/openapi.yml).
 pnpm test && pnpm lint && pnpm build
 ONEBILLION_URL=http://localhost:3100 ONEBILLION_KEY=dev-token ONEBILLION_FROM="Dev <hi@dev.test>" pnpm test
 ```
+
+The second line runs the integration test against the dev stack of 1billion (`make up`: the console on `:3100`,
+API key `dev-token`, domain `dev.test`).
+
+## Release
+
+Bump `version` in `package.json` first, then publish with the npm org `clowk`:
+
+```bash
+pnpm build && pnpm publish --access public
+git tag vX.Y.Z && git push origin main vX.Y.Z
+```
