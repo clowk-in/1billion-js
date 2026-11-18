@@ -6,6 +6,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-11-18
+
 ### Added
 
 - The first release of `@clowk/1billion`, for Node.js 22 or newer, Next.js (on the server) and Bun.
@@ -14,4 +16,5 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - `OneBillionError` with `status`, `body`, `noCredits` (429) and `refused` (422).
 - Types for each request, answer and error.
 
-[Unreleased]: https://github.com/clowk-in/1billion-js/compare/v0.0.0...HEAD
+[Unreleased]: https://github.com/clowk-in/1billion-js/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/clowk-in/1billion-js/releases/tag/v0.1.0
