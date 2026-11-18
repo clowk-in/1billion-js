@@ -46,7 +46,7 @@ The integration test runs only with `ONEBILLION_URL`, `ONEBILLION_API_KEY` and `
 
 - `make tag patch|minor|major` (`scripts/release.sh`) bumps the version in `package.json` and in `VERSION` of
   `src/index.ts`, closes the `Unreleased` section of `CHANGELOG.md`, commits `release: X.Y.Z`, tags `vX.Y.Z` and
-  asks before the push. `YES=1` pushes without asking. `make -n tag minor` is a dry run.
+  asks before the push. `YES=1` pushes without asking. `make tag X.Y.Z` sets an exact version (higher than the latest tag), to keep the 3 SDKs on one version. `make -n tag minor` is a dry run.
 - A commit `tag(patch|minor|major): ...` on `main` does the same through `tag.yml`, after CI passes.
 - CI tests the release commit, then `release.yml` makes the GitHub release and `publish.yml` publishes to npm.
 - Never push a `v*` tag or publish by hand: the two versions must match the tag.
