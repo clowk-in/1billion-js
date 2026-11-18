@@ -58,6 +58,7 @@ export interface Validation {
   free: boolean
   role: boolean
   disposable: boolean
+  generated: boolean
   subaddress: boolean
   base_address: string | null
   mx_found: boolean
