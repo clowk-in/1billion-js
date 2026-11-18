@@ -49,6 +49,22 @@ export interface Message {
 
 export interface Validation {
   address: string
+  user: string
+  domain: string
+  result: "deliverable" | "risky" | "undeliverable"
+  reason: string
+  score: number
+  did_you_mean: string | null
+  free: boolean
+  role: boolean
+  disposable: boolean
+  subaddress: boolean
+  base_address: string | null
+  mx_found: boolean
+  mx_host: string | null
+  suppressed: boolean
+  history: "delivered" | "bounced" | null
+  credits: number
   valid: boolean
   checks: { check: string; ok: boolean; detail: string }[]
 }
