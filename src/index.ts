@@ -65,6 +65,7 @@ export interface Validation {
   suppressed: boolean
   history: "delivered" | "bounced" | null
   credits: number
+  duration_ms: number
   valid: boolean
   checks: { check: string; ok: boolean; detail: string }[]
 }
