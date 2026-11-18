@@ -6,6 +6,16 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+### Added
+
+- `mail.emails.send(params, { idempotencyKey })`: the same call as `resend.emails.send`. It returns `{ data, error }` and never throws. A field that 1billion does not support gives a `validation_error`.
+- `OneBillion.verifySignature({ payload, headers })` (also a named export): checks the signature of a webhook and returns the event. It throws an `InvalidSignatureError`.
+
+### Changed
+
+- `new OneBillion()` takes the key from `ONEBILLION_API_KEY` and the URL from `ONEBILLION_URL` when you do not pass them.
+- The env var of the docs and of the integration test is `ONEBILLION_API_KEY` (it was `ONEBILLION_KEY`).
+
 ## [0.1.0] - 2026-11-18
 
 ### Added

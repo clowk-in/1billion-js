@@ -85,12 +85,8 @@ test("reads a message, unsuppresses and validates", async () => {
   assert.deepEqual(calls.map((call) => call.url), ["http://api.test/messages/m1", "http://api.test/suppressions/ana%40x.com", "http://api.test/validate"])
 })
 
-test("needs a key", () => {
-  assert.throws(() => new OneBillion(undefined))
-})
-
 test("against a real console", { skip: !process.env.ONEBILLION_URL }, async () => {
-  const mail = new OneBillion(process.env.ONEBILLION_KEY, { url: process.env.ONEBILLION_URL })
+  const mail = new OneBillion(process.env.ONEBILLION_API_KEY, { url: process.env.ONEBILLION_URL })
   const out = await mail.send({ from: process.env.ONEBILLION_FROM, to: ["sdk-node@gmail.com"], subject: "SDK Node", text: "Olá" })
 
   assert.equal((await mail.message(out.messages[0].id)).id, out.messages[0].id)

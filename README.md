@@ -42,23 +42,44 @@ pnpm add @clowk/1billion
 
 Node.js 22 or newer, or Bun. The package is ESM only.
 
-Make an API key in the [console](https://1billion.clowk.in), and verify the domain that you send from.
+Make an API key in the [console](https://1billion.clowk.in), and verify the domain that you send from. Put the
+key in the environment:
 
-## Quick start
+```bash
+export ONEBILLION_API_KEY=<your API key>
+```
+
+## Quick start (the same call as Resend)
 
 ```ts
 import { OneBillion } from "@clowk/1billion"
 
-const mail = new OneBillion(process.env.ONEBILLION_KEY)
+const mail = new OneBillion() // the key of ONEBILLION_API_KEY
 
-const { messages } = await mail.send({
+const { data, error } = await mail.emails.send({
   from: "Acme <hi@acme.com>",
   to: "jane@example.com",
   subject: "Your code",
-  text: "Your code is 482 913",
+  html: "<p>Your code is <b>482 913</b></p>",
 })
 
-console.log(messages[0].id)
+if (error) console.error(error) // { name, message, statusCode }
+else console.log(data.id)
+```
+
+`emails.send` is the call of `resend.emails.send`: a move from Resend changes only the import and the class.
+Like Resend, it returns `{ data, error }` and never throws. `data` has `id` (the first message) and `messages`
+(one per recipient). `error` has `name` (`validation_error`, `invalid_api_key`, `no_credits`, `network_error`
+or `api_error`), `message` and `statusCode` (`null` for a network error). Pass the idempotency key as the
+second argument: `mail.emails.send(params, { idempotencyKey: "receipt-8812" })`.
+
+A field that 1billion does not support (for example `tags`, `headers` or `scheduledAt`) gives a
+`validation_error` that names it. The SDK never drops a field and sends the mail without it.
+
+To get an error that is thrown, use `send` (below). Both calls send the same mail.
+
+```ts
+const { messages } = await mail.send({ from: "Acme <hi@acme.com>", to: "jane@example.com", subject: "Your code", text: "482 913" })
 ```
 
 `send` returns when 1billion has the mail (`202`, status `accepted`). The delivery runs after that, with its
@@ -70,7 +91,7 @@ own retries. Each recipient gets a message id of its own.
 // app/api/login/route.ts
 import { OneBillion } from "@clowk/1billion"
 
-const mail = new OneBillion(process.env.ONEBILLION_KEY)
+const mail = new OneBillion()
 
 export async function POST(request: Request) {
   const { email } = await request.json()
@@ -87,7 +108,33 @@ export async function POST(request: Request) {
 }
 ```
 
-Keep `ONEBILLION_KEY` without the `NEXT_PUBLIC_` prefix, so it never goes to the browser.
+Keep `ONEBILLION_API_KEY` without the `NEXT_PUBLIC_` prefix, so it never goes to the browser.
+
+## Verify a webhook
+
+```ts
+// app/api/webhooks/1billion/route.ts
+import { OneBillion } from "@clowk/1billion"
+
+export async function POST(request: Request) {
+  try {
+    const event = OneBillion.verifySignature({ payload: await request.text(), headers: request.headers })
+
+    if (event.type === "bounced") await markBounced(event.to)
+
+    return new Response(null, { status: 200 })
+  } catch {
+    return new Response(null, { status: 401 })
+  }
+}
+```
+
+`verifySignature` (also a named export) checks `1B-Signature` against the raw body and `1B-Timestamp`, and
+returns the event (`id`, `type`, `message_id`, `to`, `detail`, `created_at`). The secret comes from
+`ONEBILLION_WEBHOOK_SECRET`; pass `secret` to set it in code. A bad or missing signature, or a timestamp older
+than 5 minutes (`tolerance: 300`), throws an `InvalidSignatureError` (a `OneBillionError` with the name
+`invalid_signature`). `headers` is a `Headers` object or a plain object with names in any case. Read the raw
+body (`request.text()`): a body parsed and made into JSON again does not match.
 
 ## Send
 
@@ -190,8 +237,8 @@ await mail.unsuppress("jane@example.com")
 ## Options
 
 ```ts
-const mail = new OneBillion(process.env.ONEBILLION_KEY, {
-  url: "http://localhost:3100",
+const mail = new OneBillion(process.env.ONEBILLION_API_KEY, {
+  url: "http://localhost:3100", // ONEBILLION_URL, else https://1billion.clowk.in
   timeoutMs: 5_000,
   backoffMs: 1_000,
   fetch: myFetch,

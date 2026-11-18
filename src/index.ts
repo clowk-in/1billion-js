@@ -4,7 +4,11 @@
  *
  * A 503 or a network error is tried again (3 times in all) with the same Idempotency-Key, so a
  * retry never sends twice. No other error is tried again.
+ *
+ * The API key comes from ONEBILLION_API_KEY and the base URL from ONEBILLION_URL, unless you pass them.
  */
+
+import { createHmac, timingSafeEqual } from "node:crypto"
 
 export const VERSION = "0.1.0"
 
@@ -32,6 +36,46 @@ export interface Mail {
   raw?: string
   idempotencyKey?: string
 }
+
+/** The params of `emails.send`: the same fields as `resend.emails.send`. */
+export type EmailParams = Pick<Mail, "from" | "to" | "cc" | "bcc" | "replyTo" | "subject" | "text" | "html" | "attachments" | "priority">
+
+export interface EmailOptions {
+  idempotencyKey?: string
+}
+
+/** The error of `emails.send`. `statusCode` is null for a network error. */
+export interface EmailError {
+  name: "validation_error" | "invalid_api_key" | "no_credits" | "network_error" | "api_error"
+  message: string
+  statusCode: number | null
+}
+
+/** The answer of `emails.send`: one of `data` and `error` is null. `data.id` is the id of the first message. */
+export type EmailResult = { data: Accepted & { id: string }; error: null } | { data: null; error: EmailError }
+
+/** The body of a webhook. */
+export interface WebhookEvent {
+  id: string
+  type: "delivered" | "bounced" | "unsubscribed" | "test"
+  message_id: string
+  to: string
+  detail: string
+  created_at: string
+}
+
+export interface VerifyParams {
+  /** The raw body, as the server got it. */
+  payload: string | Uint8Array
+  /** A Headers object, or a plain object with names in any case (for example Node's `req.headers`). */
+  headers: Headers | Record<string, string | string[] | undefined>
+  /** ONEBILLION_WEBHOOK_SECRET by default. */
+  secret?: string
+  /** The seconds that a timestamp stays good, 300 by default. */
+  tolerance?: number
+}
+
+const EMAIL_FIELDS = ["from", "to", "cc", "bcc", "replyTo", "subject", "text", "html", "attachments", "priority"]
 
 export interface Accepted {
   messages: { id: string; to: string; status: string }[]
@@ -105,18 +149,93 @@ export class OneBillionError extends Error {
   }
 }
 
+/** A bad or missing webhook signature, or a timestamp out of the tolerance. */
+export class InvalidSignatureError extends OneBillionError {
+  constructor(message: string) {
+    super(`1billion: ${message}`, 401)
+
+    this.name = "invalid_signature"
+  }
+}
+
+function header(headers: VerifyParams["headers"], name: string): string | undefined {
+  if (headers instanceof Headers) return headers.get(name) ?? undefined
+
+  const found = Object.entries(headers).find(([key]) => key.toLowerCase() === name.toLowerCase())?.[1]
+
+  return Array.isArray(found) ? found[0] : found
+}
+
+/**
+ * Checks the signature of a webhook and returns the event. `1B-Signature` is `sha256=<hex>`, with
+ * hex = HMAC-SHA256(secret, "<1B-Timestamp>.<raw body>"). Throws an InvalidSignatureError.
+ */
+export function verifySignature({ payload, headers, secret = process.env.ONEBILLION_WEBHOOK_SECRET, tolerance = 300 }: VerifyParams): WebhookEvent {
+  if (!secret) throw new Error("1billion: no webhook secret: set ONEBILLION_WEBHOOK_SECRET or pass secret")
+
+  const timestamp = header(headers, "1B-Timestamp")
+  const signature = header(headers, "1B-Signature")
+
+  if (!timestamp || !signature) throw new InvalidSignatureError("no 1B-Timestamp or 1B-Signature header")
+
+  const seconds = /^\d+$/.test(timestamp) ? Number(timestamp) : NaN
+
+  if (!(Math.abs(Date.now() / 1000 - seconds) <= tolerance)) throw new InvalidSignatureError("the timestamp is out of the tolerance")
+
+  const body = typeof payload === "string" ? payload : Buffer.from(payload).toString("utf8")
+  const expected = Buffer.from(`sha256=${createHmac("sha256", secret).update(`${timestamp}.${body}`).digest("hex")}`)
+  const given = Buffer.from(signature)
+
+  if (expected.length !== given.length || !timingSafeEqual(expected, given)) throw new InvalidSignatureError("the signature does not match")
+
+  return JSON.parse(body) as WebhookEvent
+}
+
+function emailError(error: unknown): EmailError {
+  if (!(error instanceof OneBillionError)) return { name: "api_error", message: String(error), statusCode: null }
+
+  const names: Record<number, EmailError["name"]> = { 0: "network_error", 401: "invalid_api_key", 422: "validation_error", 429: "no_credits" }
+  const message = typeof error.body.error === "string" ? error.body.error : error.message
+
+  return { name: names[error.status] ?? "api_error", message, statusCode: error.status || null }
+}
+
 export class OneBillion {
+  static verifySignature = verifySignature
+
+  /** The same call as `resend.emails.send`: it returns `{ data, error }` and never throws. */
+  readonly emails = {
+    send: async (params: EmailParams, options: EmailOptions = {}): Promise<EmailResult> => {
+      const unknown = Object.keys(params).filter((key) => !EMAIL_FIELDS.includes(key))
+
+      if (unknown.length > 0) {
+        return { data: null, error: { name: "validation_error", message: `1billion does not support: ${unknown.join(", ")}`, statusCode: null } }
+      }
+
+      try {
+        const answer = await this.send({ ...params, idempotencyKey: options.idempotencyKey })
+
+        return { data: { id: answer.messages[0]?.id, ...answer }, error: null }
+      } catch (error) {
+        return { data: null, error: emailError(error) }
+      }
+    },
+  }
+
+
   private readonly key: string
   private readonly url: string
   private readonly backoffMs: number
   private readonly timeoutMs: number
   private readonly fetcher: typeof fetch
 
-  constructor(key: string | undefined, options: Options = {}) {
-    if (!key) throw new Error("1billion: the API key is required")
+  constructor(key?: string, options: Options = {}) {
+    key ||= process.env.ONEBILLION_API_KEY
+
+    if (!key) throw new Error("1billion: no API key: set ONEBILLION_API_KEY or pass it to new OneBillion()")
 
     this.key = key
-    this.url = options.url ?? DEFAULT_URL
+    this.url = options.url ?? process.env.ONEBILLION_URL ?? DEFAULT_URL
     this.backoffMs = options.backoffMs ?? 500
     this.timeoutMs = options.timeoutMs ?? 10_000
     this.fetcher = options.fetch ?? fetch

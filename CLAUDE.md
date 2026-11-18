@@ -10,8 +10,8 @@ only, with no runtime dependencies. The API it follows is [openapi.yml](https://
 
 | Path | What |
 |---|---|
-| `src/index.ts` | `OneBillion` (`send`, `message`, `unsuppress`, `validate`), `OneBillionError`, the types, `VERSION` |
-| `test/client.test.ts` | `node:test`, with a fake `fetch`: no network |
+| `src/index.ts` | `OneBillion` (`send`, `emails.send`, `message`, `unsuppress`, `validate`), `verifySignature`, `OneBillionError`, the types, `VERSION` |
+| `test/*.test.ts` | `node:test`, with a fake `fetch`: no network (`resend.test.ts`: `emails.send`, `verifySignature`, the env vars) |
 | `dist/` | the build (`pnpm build`), git-ignored |
 
 The same SDK exists for Ruby (`clowk-in/1billion-ruby`) and Go (`clowk-in/1billion-go`). The 3 keep the same
@@ -26,7 +26,7 @@ make lint    # eslint, flat config
 make build   # tsc to dist/
 ```
 
-The integration test runs only with `ONEBILLION_URL`, `ONEBILLION_KEY` and `ONEBILLION_FROM`.
+The integration test runs only with `ONEBILLION_URL`, `ONEBILLION_API_KEY` and `ONEBILLION_FROM`.
 
 ## Rules
 
