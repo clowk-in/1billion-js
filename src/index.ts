@@ -145,7 +145,7 @@ export class OneBillion {
     await this.request("DELETE", `/suppressions/${encodeURIComponent(address)}`)
   }
 
-  /** The checks of an address. It sends nothing and costs nothing. */
+  /** The verdict of an address (result, reason, score and the signals). It sends nothing and costs 100 credits. */
   validate(address: string): Promise<Validation> {
     return this.request<Validation>("POST", "/validate", { address })
   }

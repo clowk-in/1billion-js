@@ -1,0 +1,86 @@
+name: publish
+
+# The package @clowk/1billion of a release, on npm, with provenance. There
+# are no tests here: CI calls this workflow only after its tests passed on
+# the release commit.
+#
+# It publishes with the secret NPM_TOKEN when the repo has it, and with
+# trusted publishing (OIDC) when it does not.
+
+on:
+  workflow_call:
+    inputs:
+      tag:
+        type: string
+        required: true
+
+  # Run by hand: the tag must exist.
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: The release tag (vX.Y.Z)
+        type: string
+        required: true
+
+env:
+  TAG: ${{ inputs.tag }}
+
+permissions:
+  contents: read
+  id-token: write
+
+# One release at a time, never cancelled halfway (a version can be
+# published only once).
+concurrency:
+  group: publish
+  cancel-in-progress: false
+
+jobs:
+  npm:
+    name: npm (@clowk/1billion)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag }}
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+          cache: pnpm
+
+      - name: Check the versions match the tag
+        run: |
+          test "v$(node -p "require('./package.json').version")" = "$TAG"
+          grep -q "export const VERSION = \"${TAG#v}\"" src/index.ts
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm build
+
+      # A version that is already on npm is skipped, so a re-run finishes a
+      # release that stopped halfway.
+      - name: Publish
+        shell: bash
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          if [ -z "$NODE_AUTH_TOKEN" ]; then
+            unset NODE_AUTH_TOKEN
+          fi
+
+          version="$(node -p "require('./package.json').version")"
+
+          if npm view "@clowk/1billion@$version" version >/dev/null 2>&1; then
+            echo "@clowk/1billion@$version is already on npm: skipped"
+
+            exit 0
+          fi
+
+          npm publish --provenance --access public
