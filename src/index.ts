@@ -54,14 +54,52 @@ export interface EmailError {
 /** The answer of `emails.send`: one of `data` and `error` is null. `data.id` is the id of the first message. */
 export type EmailResult = { data: Accepted & { id: string }; error: null } | { data: null; error: EmailError }
 
-/** The body of a webhook. */
-export interface WebhookEvent {
+/** The body of a webhook. Check `type` first: only a `mail.received` event has `data`. */
+export type WebhookEvent = SentMailEvent | MailReceivedEvent
+
+/** The event of a sent mail (or a test from the Webhooks page). */
+export interface SentMailEvent {
   id: string
   type: "delivered" | "bounced" | "unsubscribed" | "test"
   message_id: string
   to: string
   detail: string
   created_at: string
+}
+
+/** A mail to an address whose route is "webhook". `message_id` is empty and `to` is the address that got it. */
+export interface MailReceivedEvent extends Omit<SentMailEvent, "type"> {
+  type: "mail.received"
+  data: MailReceived
+}
+
+/** A received mail, whole. 1billion keeps no content, so this is the only time the app gets it. */
+export interface MailReceived {
+  id: string
+  /** The From header. */
+  from: string | null
+  /** The address that got the mail. */
+  to: string
+  /** The sender of the envelope. */
+  mail_from: string
+  subject: string | null
+  message_id: string | null
+  /** Whole, never cut. */
+  text: string | null
+  /** Whole, never cut. */
+  html: string | null
+  /** The name, type and size of each file, never its content. */
+  attachments: ReceivedFile[]
+  /** What the mx of 1billion found of the sender. */
+  auth: { spf: string; dkim: string; dmarc: string }
+  size: number
+  received_at: string
+}
+
+export interface ReceivedFile {
+  filename: string
+  content_type: string
+  size: number
 }
 
 export interface VerifyParams {
