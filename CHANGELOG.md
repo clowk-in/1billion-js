@@ -6,8 +6,6 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
-## [0.4.0] - 2026-11-23
-
 ### Added
 
 - The event of a received mail: `WebhookEvent` is now `SentMailEvent | MailReceivedEvent`. A `mail.received`
@@ -36,7 +34,6 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - `OneBillionError` with `status`, `body`, `noCredits` (429) and `refused` (422).
 - Types for each request, answer and error.
 
-[Unreleased]: https://github.com/clowk-in/1billion-js/compare/v0.4.0...HEAD
-[0.4.0]: https://github.com/clowk-in/1billion-js/compare/v0.3.0...v0.4.0
+[Unreleased]: https://github.com/clowk-in/1billion-js/compare/v0.3.0...HEAD
 [0.3.0]: https://github.com/clowk-in/1billion-js/compare/v0.1.0...v0.3.0
 [0.1.0]: https://github.com/clowk-in/1billion-js/releases/tag/v0.1.0
