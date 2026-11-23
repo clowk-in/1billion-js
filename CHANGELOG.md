@@ -6,6 +6,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+### Added
+
+- The event of a received mail: `WebhookEvent` is now `SentMailEvent | MailReceivedEvent`. A `mail.received`
+  event has `data`, a `MailReceived` with the whole mail (`from`, `subject`, `text`, `html`, `attachments`,
+  `auth` and more). Check `event.type === "mail.received"` and TypeScript knows that `data` is there.
+
 ## [0.3.0] - 2026-11-18
 
 ### Added

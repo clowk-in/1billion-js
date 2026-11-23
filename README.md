@@ -141,6 +141,26 @@ than 5 minutes (`tolerance: 300`), throws an `InvalidSignatureError` (a `OneBill
 `invalid_signature`). `headers` is a `Headers` object or a plain object with names in any case. Read the raw
 body (`request.text()`): a body parsed and made into JSON again does not match.
 
+### A received mail
+
+A mail to an address whose route is "webhook" (Recebimento, in the console) comes as the event
+`mail.received`. Its `data` is the whole mail (`MailReceived`). 1billion keeps no content, so this is the only
+time your app gets it. Check `type` first: TypeScript then knows that `data` is there.
+
+```ts
+if (event.type === "mail.received") {
+  const { mail_from, subject, text, attachments } = event.data
+
+  await saveFeedback(mail_from, subject, text)
+
+  for (const file of attachments) console.log(file.filename, file.content_type, file.size)
+}
+```
+
+`MailReceived` has `id`, `from`, `to`, `mail_from`, `subject`, `message_id`, `text`, `html`, `attachments`
+(the name, type and size of each file, never its content), `auth` (`spf`, `dkim` and `dmarc` as our mx saw
+them), `size` and `received_at`. `text` and `html` are whole, never cut, and are `null` when the mail has none.
+
 ## Send
 
 ```ts

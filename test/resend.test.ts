@@ -2,7 +2,7 @@ import assert from "node:assert/strict"
 import { createHmac } from "node:crypto"
 import { test } from "node:test"
 
-import { OneBillion, OneBillionError, verifySignature } from "../src/index.ts"
+import { OneBillion, OneBillionError, verifySignature, type MailReceived } from "../src/index.ts"
 
 const json = (status: number, body: unknown) => new Response(JSON.stringify(body), { status })
 
@@ -130,6 +130,31 @@ test("verifySignature returns the event", () => {
 
   assert.equal(event.type, "delivered")
   assert.equal(OneBillion.verifySignature({ payload: Buffer.from(payload), headers: new Headers(signed()), secret }).message_id, "m1")
+})
+
+test("verifySignature returns a received mail with its own type", () => {
+  const received = JSON.stringify({
+    id: "e2", type: "mail.received", message_id: "", to: "feedback@example.com", detail: "", created_at: "2026-11-19T12:00:01Z",
+    data: {
+      id: "r1", from: "Ana <ana@example.org>", to: "feedback@example.com", mail_from: "ana@example.org", subject: "Oi",
+      message_id: "<a@example.org>", text: "Oi, tudo bem?", html: null,
+      attachments: [{ filename: "nota.pdf", content_type: "application/pdf", size: 48213 }],
+      auth: { spf: "pass", dkim: "pass", dmarc: "pass" }, size: 52011, received_at: "2026-11-19T12:00:00.000Z",
+    },
+  })
+
+  const event = verifySignature({ payload: received, headers: signed(undefined, secret, received), secret })
+
+  assert.equal(event.type, "mail.received")
+
+  if (event.type !== "mail.received") return
+
+  const mail: MailReceived = event.data
+
+  assert.equal(mail.subject, "Oi")
+  assert.equal(mail.html, null)
+  assert.deepEqual(mail.attachments, [{ filename: "nota.pdf", content_type: "application/pdf", size: 48213 }])
+  assert.deepEqual(mail.auth, { spf: "pass", dkim: "pass", dmarc: "pass" })
 })
 
 test("verifySignature takes header names in any case and the secret from the environment", async () => {
